@@ -35,35 +35,31 @@ def add_virtual_column(df: pd.DataFrame, role: str, new_column: str)->pd.DataFra
     role = re.sub(r'\s+', '', role)
     ## Splitting the role based on operators
     elements = re.split(r'([*+-])', role)
-    if (len(elements) != 3
-            or not check_column(elements[0])
-            or not check_column(elements[2])
-            or not elements[0] in df.columns
-            or not elements[2] in df.columns
-            or not check_column(new_column)):
+    if len(elements) != 3:
+        return pd.DataFrame()
+
+    column1, operator, column2 = elements
+    if (not is_valid_label(column1)
+            or not is_valid_label(column2)
+            or column1 not in df.columns
+            or column2 not in df.columns
+            or not is_valid_label(new_column)):
         return pd.DataFrame()
 
     ## CALCULATING PART
     new_df = df.copy(deep=True)
-    column1 = elements[0]
-    column2 = elements[2]
-    operator = elements[1]
-    match operator:
-        case '+': new_df[new_column] = new_df[column1] + new_df[column2]
-        case '-': new_df[new_column] = new_df[column1] - new_df[column2]
-        case '*': new_df[new_column] = new_df[column1] * new_df[column2]
-        case _: return pd.DataFrame()
+    try:
+        match operator:
+            case '+': new_df[new_column] = new_df[column1] + new_df[column2]
+            case '-': new_df[new_column] = new_df[column1] - new_df[column2]
+            case '*': new_df[new_column] = new_df[column1] * new_df[column2]
+            case _: return pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
 
     return new_df
 
-def check_column(column: str)-> bool | None:
-    """
-    Checks whether a column label consists only of letters and underscores (_).
-    :param column: str
-    :return: bool
-    """
-    pattern = r"^[a-zA-Z_]+$"
-    for s in column:
-        if not re.match(pattern, s):
-            return False
-    return True
+def is_valid_label(label: str) -> bool:
+    """Checks if label consists only of letters and underscores."""
+    # Matches the whole string from start (^) to end ($)
+    return bool(re.match(r"^[a-zA-Z_]+$", label))
